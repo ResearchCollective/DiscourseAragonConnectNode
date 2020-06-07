@@ -1,0 +1,27 @@
+{
+  "@version": 1.1,
+  "@protected": true,
+  "ResearchCollectiveExpertDAOResource": "https://researchcollective.io/ResearchCollectiveExpertDAOResource",
+  "DataFeedItem": {
+    "@id": "http://schema.org/DataFeedItem",
+    "@context": {
+      "@version": 1.1,
+      "@protected": true,
+      "dateCreated": "http://schema.org/dateCreated",
+      "item": "http://schema.org/item",
+      "description":"http://schema.org/description",
+      "name":"http://schema.org/name",
+      "url": "http://schema.org/url"
+    }
+  },
+  "EndorsementRating": {
+    "@id": "http://schema.org/EndorsementRating",
+    "@context": {
+      "@version": 1.1,
+      "@protected": true,
+      "author": "http://schema.org/author",
+      "ratingValue": "http://schema.org/ratingValue",
+      "ratingExplanation": "http://pending.schema.org/ratingExplanation"
+    }
+  }
+}

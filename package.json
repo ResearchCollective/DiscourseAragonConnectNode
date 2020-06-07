@@ -1,0 +1,49 @@
+{
+  "name": "node-researchcollective-backend",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "RC backend for verified credentials",
+  "engines": {
+    "node": ">= 12.13 <13"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.6",
+    "@types/jest": "~25.2.1",
+    "@types/node": "~12.12.38",
+    "@typescript-eslint/eslint-plugin": "~2.32.0",
+    "@typescript-eslint/parser": "~2.32.0",
+    "eslint": "~7.0.0",
+    "eslint-config-prettier": "~6.11.0",
+    "eslint-plugin-jest": "~23.10.0",
+    "jest": "~25.2.7",
+    "prettier": "~2.0.5",
+    "rimraf": "~3.0.2",
+    "shelljs": "^0.8.4",
+    "ts-jest": "~25.5.1",
+    "ts-node": "^8.10.2",
+    "ts-node-dev": "^1.0.0-pre.44",
+    "tsutils": "~3.17.0",
+    "typescript": "~3.8.3"
+  },
+  "scripts": {
+    "dev":"./node_modules/ts-node-dev/bin/ts-node-dev --respawn --transpileOnly src/app.tsx",
+    "production": "npm run build && node build/src/app.js",
+    "clean": "rimraf coverage build tmp",
+    "build": "tsc -p tsconfig.release.json && ts-node src/copyStaticAssets.ts",
+    "build:watch": "tsc -w -p tsconfig.release.json",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "author": "Ian Philips <github@ianphilips.info>",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@docknetwork/sdk": "^0.1.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "form-data": "^3.0.0",
+    "fs": "0.0.1-security",
+    "node-fetch": "^2.6.0",
+    "tslib": "~1.11.2"
+  }
+}

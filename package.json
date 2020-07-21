@@ -26,7 +26,7 @@
     "typescript": "~3.8.3"
   },
   "scripts": {
-    "dev":"./node_modules/ts-node-dev/bin/ts-node-dev --respawn --transpileOnly src/app.tsx",
+    "dev": "./node_modules/ts-node-dev/bin/ts-node-dev --respawn --transpileOnly src/app.tsx",
     "production": "npm run build && node build/src/app.js",
     "clean": "rimraf coverage build tmp",
     "build": "tsc -p tsconfig.release.json && ts-node src/copyStaticAssets.ts",
@@ -38,6 +38,9 @@
   "author": "Ian Philips <github@ianphilips.info>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@aragon/connect": "^0.4.2",
+    "@aragon/connect-thegraph-tokens": "^0.4.2",
+    "@aragon/connect-thegraph-voting": "^0.4.2",
     "@docknetwork/sdk": "^0.1.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",

@@ -27,5 +27,5 @@ build/
 
 # Misc
 .DS_Store
-#keypair.json
-#.env
+keypair.json
+.env

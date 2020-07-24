@@ -1,21 +1,24 @@
 import { connect, describeScript } from '@aragon/connect'
 // import {Voting} from '@aragon/connect-thegraph-voting'
-import {DandelionVoting} from '@1hive/connect-app-dandelion-voting'
+import {Vote, VotingConnectorTheGraph} from '@1hive/connect-app-dandelion-voting'
 import {Response} from "express";
 import {asyncFilter, sendAndLogError} from "./utils";
 
 const orgAddress = "0x08f7771f48673df8E3e22a892661BF06D01fc1f5"
 const VOTE_DURATION = 24 * 60 * 60 * 1000; // ms
+const TOKEN_REQUEST_LABELS=["token-request"]
+const VOTE_LABELS=["vote","experiment"]
 
 export default class Aragon {
 
-  static async NewVote(req:Request, res:Response){
+  static async NewVoteProposal(req:Request, res:Response){
     const org = await connect(orgAddress, 'thegraph', { chainId: 4 })
 
     const aragonVote = new AragonVote(
       req.body["timestamp"],
       req.body["url"],
-      req.body["userAddress"])
+      req.body["userAddress"],
+      req.body["firstPostContent"])
     console.log("proposal details:",aragonVote);
 
     const apps = await org.apps();
@@ -38,13 +41,15 @@ export default class Aragon {
     res.status(200).send(JSON.stringify(path));
   }
 
+  // TODO: we respond with 3 transactions but they only need to complete 2
   static async NewTokenProposal(req:Request, res:Response){
     const org = await connect(orgAddress, 'thegraph', { chainId: 4 })
 
     const aragonVote = new AragonVote(
       req.body["timestamp"],
       req.body["url"],
-      req.body["userAddress"])
+      req.body["userAddress"],
+      req.body["firstPostContent"])
     console.log("proposal details:",aragonVote);
 
     const apps = await org.apps();
@@ -70,38 +75,56 @@ export default class Aragon {
 
 
   static async VoteOnProposal(req:Request, res:Response) {
+
+    const aragonVote = new AragonVote(
+      req.body["timestamp"],
+      req.body["url"],
+      req.body["userAddress"].toLowerCase(),
+      req.body["firstPostContent"]);
+
+
     // Connect to the Rinkeby test network
     const org = await connect(orgAddress, 'thegraph', { chainId: 4 })
     const apps = await org.apps();
     const { address } = apps.find(app => app.appName.includes("voting"));
 
-    const voting = new DandelionVoting(
-      address,
+
+    const voting = new VotingConnectorTheGraph(
       'https://api.thegraph.com/subgraphs/name/1hive/aragon-dandelion-voting-rinkeby'
-      )
+    );
+    const votes = await voting.votesForApp(address, 1000,0);
 
-    const votes = await voting.votes();
-    // console.log("votes:",votes);
+    const isTokenRequest = TOKEN_REQUEST_LABELS.some( (label)=>{
+      return aragonVote.firstPostContent.includes(label)
+    });
 
-    // find vote with matching timestamp and poster
-    const aragonVote = new AragonVote(
-      req.body["timestamp"],
-      req.body["url"],
-      req.body["userAddress"].toLowerCase());
+    let votesWithMatchingMetadata = [];
+    if (isTokenRequest){
+      votesWithMatchingMetadata = await asyncFilter(votes, async (vote)=> {
+        const {script} = vote
+        // 0x scripts throw errors
+        if (script=="0x"){
+          return false
+        }
+        const description = await describeScript(script, apps, org.provider).catch(e=>{
+          console.log("error describing script:", e, " with script:", script)
+          return false
+        })
 
-    // TODO: select properly for a vote on a simple vote vs. token request vote -
-    //a vote intended for a simple vote will catch token request votes as well by the same member
-    const votesWithMatchingMetadata = await asyncFilter(votes, async (vote)=>{
-      const { script } = vote
-      console.log("metadata for vote:", vote.metadata)
-      if (vote.metadata.length==0) {
-        const description = await describeScript(script, apps, org.provider)
+        // null descriptions throw errors
+        if (!description[0]){
+          return false
+        }
+        console.log("token request description:", description)
         return description[0].description.toLowerCase().includes(aragonVote.posterAddress);
-      }
-      console.log("json:",aragonVote.GetJSON())
-      console.log("json:",vote.metadata.includes(aragonVote.GetJSON()))
-      return vote.metadata.includes(aragonVote.GetJSON());
-    })
+      })}
+      else{
+      votesWithMatchingMetadata = await asyncFilter(votes, async (vote)=>{
+        console.log("metadata for vote:", vote.metadata)
+        console.log("matches incoming vote json:",vote.metadata.includes(aragonVote.GetJSON()))
+        return vote.metadata.includes(aragonVote.GetJSON());
+      })
+    }
 
     console.log("matching votes:",votesWithMatchingMetadata);
 
@@ -114,24 +137,35 @@ export default class Aragon {
       return Date.now() < (voteStartTime + VOTE_DURATION)  && !vote.executed
     })
 
-    if (matchingOpenVotes.length==0){
-      sendAndLogError(res,"vote not found or expired already")
+    const unvotedOnByUserOpenVotes = await asyncFilter(matchingOpenVotes, async(vote:Vote)=>{
+      const casts = await voting.castsForVote(vote.id,1000,0);
+      return !casts.some((cast)=>{
+        return cast.voter == aragonVote.posterAddress;
+      })
+    })
+
+    console.log("unvoted on votes by user:", unvotedOnByUserOpenVotes)
+
+    if (unvotedOnByUserOpenVotes.length==0){
+      sendAndLogError(res,"vote not found or expired already or user already voted")
       return;
     }
 
-    if (matchingOpenVotes.length>1){
-      sendAndLogError(res,"too many matching votes")
+    if (unvotedOnByUserOpenVotes.length>1){
+      if (isTokenRequest){
+        sendAndLogError(res,"too many matching open votes - only one open token request is allowed at a time")
+        return;
+      }
+      sendAndLogError(res,"too many matching open votes")
       return;
     }
-    const proposalToVoteOn = matchingOpenVotes[0];
-    const preference = req.body["vote"];
-    const latestVoteID = proposalToVoteOn.id.split("voteId:")[1];
+
+    const latestVoteID = unvotedOnByUserOpenVotes[0].id.split("voteId:")[1];
     const intent = await org.appIntent(
       address,
       'vote',
-      [latestVoteID, preference=="yes"]
+      [latestVoteID, req.body["vote"]=="yes"]
     )
-
 
     const path = await intent.paths(aragonVote.posterAddress)
     if (path == undefined || !path){
@@ -139,9 +173,7 @@ export default class Aragon {
       return;
     }
     console.log("paths:",path);
-    // return shortest path
     res.status(200).send(JSON.stringify(path));
-    // console.log("paths:",paths);
   }
 }
 
@@ -159,7 +191,7 @@ async function getMSFromBlockNumber(startBlock:string):Promise<number>{
       "params":["0x"+parseInt(startBlock).toString(16), true]
     })
   };
-  const voteStartTime = await fetch("https://rinkeby.infura.io/v3/" + process.env.INFURE_PROJECT_ID,
+  const voteStartTime = await fetch("https://rinkeby.infura.io/v3/" + process.env.INFURA_PROJECT_ID,
     params )
     .then(async response =>
     {
@@ -177,7 +209,10 @@ async function getMSFromBlockNumber(startBlock:string):Promise<number>{
 }
 
 class AragonVote{
-  constructor(public timestamp:string, public url:string, public posterAddress:string) {
+  constructor(public timestamp:string,
+              public url:string,
+              public posterAddress:string,
+              public firstPostContent:string) {
   }
   public GetJSON(){
     return JSON.stringify(this);

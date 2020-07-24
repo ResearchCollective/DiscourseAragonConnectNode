@@ -41,7 +41,7 @@ function getKeyDoc():void{
   });
 }
 
-APP.post('/submitNewAragonVote', Aragon.NewVote)
+APP.post('/submitNewAragonVote', Aragon.NewVoteProposal)
 
 APP.post('/submitNewAragonTokenRequest', Aragon.NewTokenProposal)
 

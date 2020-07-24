@@ -41,9 +41,11 @@ function getKeyDoc():void{
   });
 }
 
-APP.post('/submitNewAragonProposal', Aragon.NewTokenProposal)
+APP.post('/submitNewAragonVote', Aragon.NewVote)
 
-APP.post('/getVoteTransaction', Aragon.Connect)
+APP.post('/submitNewAragonTokenRequest', Aragon.NewTokenProposal)
+
+APP.post('/getVoteTransaction', Aragon.VoteOnProposal)
 
 // Used to submit a proposal to the telegram channel
 APP.post('/submitNewProposal', Proposals.GenerateProposal);

@@ -38,6 +38,7 @@
   "author": "Ian Philips <github@ianphilips.info>",
   "license": "Apache-2.0",
   "dependencies": {
+    "@1hive/connect-app-dandelion-voting": "0.0.1",
     "@aragon/connect": "^0.4.2",
     "@aragon/connect-thegraph-tokens": "^0.4.2",
     "@aragon/connect-thegraph-voting": "^0.4.2",

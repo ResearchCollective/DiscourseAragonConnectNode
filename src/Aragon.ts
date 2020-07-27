@@ -1,13 +1,15 @@
+//@ts-ignore
 import { connect, describeScript } from '@aragon/connect'
-// import {Voting} from '@aragon/connect-thegraph-voting'
+
 import {Vote, VotingConnectorTheGraph} from '@1hive/connect-app-dandelion-voting'
 import {Response} from "express";
 import {asyncFilter, sendAndLogError} from "./utils";
 
 const orgAddress = "0x08f7771f48673df8E3e22a892661BF06D01fc1f5"
 const VOTE_DURATION = 24 * 60 * 60 * 1000; // ms
-const TOKEN_REQUEST_LABELS=["token-request"]
-const VOTE_LABELS=["vote","experiment"]
+const TOKEN_REQUEST_LABELS=["token-request"];
+//@ts-ignore
+const VOTE_LABELS=["vote","experiment"];
 
 export default class Aragon {
 
@@ -106,6 +108,7 @@ export default class Aragon {
         if (script=="0x"){
           return false
         }
+        //@ts-ignore
         const description = await describeScript(script, apps, org.provider).catch(e=>{
           console.log("error describing script:", e, " with script:", script)
           return false
@@ -134,6 +137,7 @@ export default class Aragon {
         sendAndLogError(res,"error on get block time")
         return;
       });
+      //@ts-ignore
       return Date.now() < (voteStartTime + VOTE_DURATION)  && !vote.executed
     })
 

@@ -26,8 +26,8 @@ APP.use(function(_req, res, next) {
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
+APP.use(express.static(__dirname, { dotfiles: 'allow' } ));
 APP.use(express.json());
-
 
 // Load the server keys
 function getKeyDoc():void{

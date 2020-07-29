@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
-    "removeComments": true
+    "removeComments": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*"

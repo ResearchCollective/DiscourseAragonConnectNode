@@ -5,7 +5,7 @@ import {Vote, VotingConnectorTheGraph} from '@1hive/connect-app-dandelion-voting
 import {Response} from "express";
 import {asyncFilter, sendAndLogError} from "./utils";
 
-const orgAddress = "0x08f7771f48673df8E3e22a892661BF06D01fc1f5"
+const orgAddress = "0x2EC40250b77B526EE70c89a983fC70efeC6f76dC";
 const VOTE_DURATION = 24 * 60 * 60 * 1000; // ms
 const TOKEN_REQUEST_LABELS=["token-request"];
 //@ts-ignore

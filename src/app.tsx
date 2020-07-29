@@ -16,7 +16,8 @@ const secp256k1Curve = new elliptic.ec('secp256k1');
 
 // Variables
 const APP = express();
-const PORT = process.platform=="darwin" ? 3001  : 80;
+const IS_LINUX_SERVER = process.platform=="linux";
+const CROSS_ORIGIN_URL = IS_LINUX_SERVER ? "https://forum.researchcollective.io" : "http://localhost:3000";
 let KEY_DOC = null;
 const SERVER_URL="api.researchcollective.io";
 
@@ -24,7 +25,8 @@ const SERVER_URL="api.researchcollective.io";
 
 // Server Config
 APP.use(function(_req, res, next) {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000"); // update to match the domain you will make the request from
+
+  res.header("Access-Control-Allow-Origin", CROSS_ORIGIN_URL); // update to match the domain you will make the request from
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
@@ -85,14 +87,10 @@ APP.get('/credentials/v1', function (_req, res) {
 // Aragon.NewTokenProposal();
 // load the signing keys then start the server
 getKeyDoc();
-APP.listen(PORT, () => console.log(`listening at http://localhost:${PORT}`));
-
-if (process.platform=="linux"){
-
+// run https
+if (IS_LINUX_SERVER){
   const https = require('https');
-
-
-// Certificate
+  // Certificate
   const privateKey = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/privkey.pem`, 'utf8');
   const certificate = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/cert.pem`, 'utf8');
   const ca = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/chain.pem`, 'utf8');
@@ -106,4 +104,9 @@ if (process.platform=="linux"){
   httpsServer.listen(443, () => {
     console.log('HTTPS Server running on port 443');
   });
+}
+// run http
+else {
+  const PORT = 3001;
+  APP.listen(PORT, () => console.log(`listening at http://localhost:${PORT}`));
 }

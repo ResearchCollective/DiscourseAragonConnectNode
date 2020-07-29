@@ -16,8 +16,10 @@ const secp256k1Curve = new elliptic.ec('secp256k1');
 
 // Variables
 const APP = express();
-const PORT = 3001;
+const PORT = process.platform=="darwin" ? 3001  : 80;
 let KEY_DOC = null;
+const SERVER_URL="api.researchcollective.io";
+
 
 
 // Server Config
@@ -28,6 +30,8 @@ APP.use(function(_req, res, next) {
 });
 APP.use(express.static(__dirname, { dotfiles: 'allow' } ));
 APP.use(express.json());
+
+
 
 // Load the server keys
 function getKeyDoc():void{
@@ -82,3 +86,24 @@ APP.get('/credentials/v1', function (_req, res) {
 // load the signing keys then start the server
 getKeyDoc();
 APP.listen(PORT, () => console.log(`listening at http://localhost:${PORT}`));
+
+if (process.platform=="linux"){
+
+  const https = require('https');
+
+
+// Certificate
+  const privateKey = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/privkey.pem`, 'utf8');
+  const certificate = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/cert.pem`, 'utf8');
+  const ca = fs.readFileSync(`/etc/letsencrypt/live/${SERVER_URL}/chain.pem`, 'utf8');
+
+  const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca
+  };
+  const httpsServer = https.createServer(credentials, APP);
+  httpsServer.listen(443, () => {
+    console.log('HTTPS Server running on port 443');
+  });
+}
